@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-var redisServerAddr string = "redis://:redis_user@10.40.213.28:6379/0"
+var redisServerAddr string = "redis://:redis_user@localhost:6379/0"
 
 func main() {
 	// Simple Connection
