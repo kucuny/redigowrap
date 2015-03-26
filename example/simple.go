@@ -28,4 +28,7 @@ func main() {
 	fmt.Println(pool.ActiveCount())
 	fmt.Println(pool.Ping())
 	fmt.Println(pool.ActiveCount())
+	fmt.Println(pool.Do("GET", 1))
+
+	pool.PoolClose()
 }

@@ -5,7 +5,13 @@ import (
 )
 
 func (con *connection) Do(command string, args ...interface{}) (interface{}, error) {
-	return con.c.Do(command, args...)
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.Do(command, args...)
+	} else {
+		return con.c.Do(command, args...)
+	}
 }
 
 func (con *connection) Echo(message string) (string, error) {

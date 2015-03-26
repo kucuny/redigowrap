@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+type PoolConnection interface {
+	RedisCommands
+	PoolCommands
+}
+
 type ConnectionPoolConfig struct {
 	MaxIdle     int
 	MaxActive   int
@@ -18,43 +23,66 @@ var DefaultConnectionPoolConfig = ConnectionPoolConfig{
 	IdleTimeout: 30,
 }
 
-func CreatePool(serverAddr, auth, db string, config ConnectionPoolConfig) (Connection, error) {
+func CreatePool(serverAddr, auth, db string, poolConfig ConnectionPoolConfig) (PoolConnection, error) {
 	dialer := func() (rg.Conn, error) {
 		return redigocon.Connect(serverAddr, auth, db)
 	}
 
-	// config := getConnectionPoolConfig(poolConfig)
+	tester := func(c rg.Conn, t time.Time) error {
+		_, err := c.Do("PING")
+		return err
+	}
 
-	pool := rg.NewPool(dialer, config.MaxIdle)
-	pool.MaxActive = config.MaxActive
-	pool.IdleTimeout = config.IdleTimeout
+	config := getConnectionPoolConfig(&poolConfig)
+
+	pool := &rg.Pool{
+		MaxIdle:      config.MaxIdle,
+		IdleTimeout:  config.IdleTimeout,
+		MaxActive:    config.MaxActive,
+		Dial:         dialer,
+		TestOnBorrow: tester,
+	}
 
 	con := &connection{p: pool}
 
 	return con, nil
 }
 
-func CreatePoolUri(uri string, config ConnectionPoolConfig) (Connection, error) {
+func CreatePoolUri(uri string, poolConfig ConnectionPoolConfig) (PoolConnection, error) {
 	dialer := func() (rg.Conn, error) {
 		return redigocon.ConnectUrl(uri)
 	}
 
-	// config := getConnectionPoolConfig(poolConfig)
+	tester := func(c rg.Conn, t time.Time) error {
+		_, err := c.Do("PING")
+		return err
+	}
 
-	pool := rg.NewPool(dialer, config.MaxIdle)
-	pool.MaxActive = config.MaxActive
-	pool.IdleTimeout = config.IdleTimeout
+	config := getConnectionPoolConfig(&poolConfig)
+
+	pool := &rg.Pool{
+		MaxIdle:      config.MaxIdle,
+		IdleTimeout:  config.IdleTimeout,
+		Dial:         dialer,
+		TestOnBorrow: tester,
+	}
 
 	con := &connection{p: pool}
 
 	return con, nil
 }
 
-func (con *connection) GetConnection() (Connection, error) {
+func getConnectionPoolConfig(config *ConnectionPoolConfig) ConnectionPoolConfig {
+	if config.IdleTimeout == 0 || config.MaxIdle == 0 || config.MaxActive == 0 {
+		return DefaultConnectionPoolConfig
+	} else {
+		return *config
+	}
+}
+
+func (con *connection) GetConnection() (PoolConnection, error) {
 	c := con.p.Get()
-
 	resCon := &connection{c: c}
-
 	return resCon, nil
 }
 
@@ -64,4 +92,8 @@ func (con *connection) ActiveCount() int {
 
 func (con *connection) Release() {
 	con.c.Close()
+}
+
+func (con *connection) PoolClose() {
+	con.p.Close()
 }

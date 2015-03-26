@@ -11,7 +11,7 @@ type connection struct {
 
 type RedisCommands interface {
 	// Redigo Function
-	// Do(cmd string, args ...interface{}) (interface{}, error)
+	Do(cmd string, args ...interface{}) (interface{}, error)
 
 	// Cluster
 
@@ -48,4 +48,11 @@ type RedisCommands interface {
 	// Strings
 
 	// Transactions
+}
+
+type PoolCommands interface {
+	GetConnection() (PoolConnection, error)
+	ActiveCount() int
+	Release()
+	PoolClose()
 }

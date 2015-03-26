@@ -7,11 +7,6 @@ import (
 
 type Connection interface {
 	RedisCommands
-
-	// Pool
-	GetConnection() (Connection, error)
-	ActiveCount() int
-	Release()
 }
 
 func CreateConnection(serverAddr, auth, db string) (Connection, error) {
