@@ -6,16 +6,18 @@ import (
 	"time"
 )
 
-type PoolConnection interface {
-	RedisCommands
-	PoolCommands
-}
+type (
+	PoolConnection interface {
+		RedisCommands
+		PoolCommands
+	}
 
-type ConnectionPoolConfig struct {
-	MaxIdle     int
-	MaxActive   int
-	IdleTimeout time.Duration
-}
+	ConnectionPoolConfig struct {
+		MaxIdle     int
+		MaxActive   int
+		IdleTimeout time.Duration
+	}
+)
 
 var DefaultConnectionPoolConfig = ConnectionPoolConfig{
 	MaxIdle:     60,
