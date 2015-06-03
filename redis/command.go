@@ -261,6 +261,42 @@ func (con *connection) MSet(keyValue map[string]string) (bool, error) {
 	}
 }
 
+func (con *connection) MSetNX(keyValue map[string]string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Int(c.MSetNX(keyValue))
+	} else {
+		req := make([]interface{}, len(keyValue)*2)
+		idx := 0
+		for name, value := range keyValue {
+			req[idx] = name
+			idx++
+			req[idx] = value
+			idx++
+		}
+
+		return rg.Int(con.c.Do("MSETNX", req...))
+	}
+}
+
+func (con *connection) PSetEX(key, value string, millisec int64) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer con.Release()
+
+		res, err := rg.String(c.PSetEX(key, value, millisec))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	} else {
+		res, err := rg.String(con.c.Do("PSETEX", key, millisec, value))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	}
+}
+
 func (con *connection) Set(key, value string) (bool, error) {
 	if con.p != nil {
 		c, _ := con.GetConnection()
