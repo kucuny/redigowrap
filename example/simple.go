@@ -1,8 +1,8 @@
 package main
 
 import (
-	"../redis"
 	"fmt"
+	"github.com/kucuny/redigowrap/redis"
 )
 
 var redisServerAddr string = "redis://:redis_user@localhost:6379/0"
@@ -15,6 +15,9 @@ func main() {
 	fmt.Println(con.Select(1))
 	res, err := con.Quit()
 	fmt.Println(res, err)
+
+	fmt.Println("MGET")
+	fmt.Println(con.MGet("test", "key2"))
 
 	// Pooled Connection
 	var config = redis.ConnectionPoolConfig{
