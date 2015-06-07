@@ -17,13 +17,28 @@ type (
 		// Cluster
 
 		// Connection
-		// Auth(password string) (string, error)
+		Auth(password string) (bool, error)
 		Echo(message string) (string, error)
 		Ping() (string, error)
 		Select(index int) (string, error)
 		Quit() (string, error)
 
 		// Hashes
+		HDel(hashKey string, fields []string) (int, error)
+		HExists(hashKey, field string) (bool, error)
+		HGet(hashKey, field string) (string, error)
+		HGetAll(hashKey string) (map[string]string, error)
+		HIncrBy(hashKey, field string, increment int) (int, error)
+		HIncrByFloat(hashKey, field string, increment float64) (float64, error)
+		HKeys(hashKey string) ([]string, error)
+		HLen(hashKey string) (int, error)
+		HMGet(hashKey string, fields []string) ([]string, error)
+		HMSet(hashKey string, fieldValue map[string]string) (bool, error)
+		// HScan() ()
+		HSet(hashKey, field, value string) (int, error)
+		HSetNX(hashKey, field, value string) (int, error)
+		HStrLen(hashKey, field string) (int, error)
+		HVals(hashKey string) ([]string, error)
 
 		// HyperLogLog
 

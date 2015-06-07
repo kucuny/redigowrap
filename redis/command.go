@@ -14,6 +14,20 @@ func (con *connection) Do(command string, args ...interface{}) (interface{}, err
 	}
 }
 
+/*
+	Connection
+*/
+func (con *connection) Auth(password string) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Bool(c.Auth(password))
+	} else {
+		res, err := rg.String(con.c.Do("AUTH", password))
+		return getBool(res), err
+	}
+}
+
 func (con *connection) Echo(message string) (string, error) {
 	if con.p != nil {
 		c, _ := con.GetConnection()
@@ -48,6 +62,179 @@ func (con *connection) Quit() (string, error) {
 	return rg.String(con.c.Do("QUIT"))
 }
 
+/*
+	Hashes
+*/
+func (con *connection) HDel(hashKey string, fields []string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Int(c.HDel(hashKey, fields))
+	} else {
+		req := make([]interface{}, len(fields)+1)
+		req[0] = hashKey
+		for idx, val := range fields {
+			req[idx+1] = val
+		}
+
+		return rg.Int(con.c.Do("HDEL", req...))
+	}
+}
+
+func (con *connection) HExists(hashKey, field string) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Bool(c.HExists(hashKey, field))
+	} else {
+		return rg.Bool(con.c.Do("HEXISTS", hashKey, field))
+	}
+}
+
+func (con *connection) HGet(hashKey, field string) (string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.String(c.HGet(hashKey, field))
+	} else {
+		return rg.String(con.c.Do("HGET", hashKey, field))
+	}
+}
+
+func (con *connection) HGetAll(hashKey string) (map[string]string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.StringMap(c.HGetAll(hashKey))
+	} else {
+		return rg.StringMap(con.c.Do("HGETALL", hashKey))
+	}
+}
+
+func (con *connection) HIncrBy(hashKey, field string, increment int) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Int(c.HIncrBy(hashKey, field, increment))
+	} else {
+		return rg.Int(con.c.Do("HINCRBY", hashKey, field, increment))
+	}
+}
+
+func (con *connection) HIncrByFloat(hashKey, field string, increment float64) (float64, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Float64(c.HIncrByFloat(hashKey, field, increment))
+	} else {
+		return rg.Float64(con.c.Do("HINCRBYFLOAT", hashKey, field, increment))
+	}
+}
+
+func (con *connection) HKeys(hashKey string) ([]string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Strings(c.HKeys(hashKey))
+	} else {
+		return rg.Strings(con.c.Do("HKEYS", hashKey))
+	}
+}
+
+func (con *connection) HLen(hashKey string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Int(c.HLen(hashKey))
+	} else {
+		return rg.Int(con.c.Do("HLEN", hashKey))
+	}
+}
+
+func (con *connection) HMGet(hashKey string, fields []string) ([]string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Strings(c.HMGet(hashKey, fields))
+	} else {
+		req := make([]interface{}, len(fields)+1)
+		req[0] = hashKey
+		for idx, val := range fields {
+			req[idx+1] = val
+		}
+		return rg.Strings(con.c.Do("HMGet", req...))
+	}
+}
+
+// TODO: Modify
+func (con *connection) HMSet(hashKey string, fieldValue map[string]string) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Bool(c.HMSet(hashKey, fieldValue))
+	} else {
+		req := make([]interface{}, len(fieldValue)*2+1)
+		req[0] = hashKey
+		idx := 1
+		for name, value := range fieldValue {
+			req[idx] = name
+			idx++
+			req[idx] = value
+			idx++
+		}
+
+		res, err := rg.String(con.c.Do("HMSET", req...))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	}
+}
+
+// func HScan() ()
+
+func (con *connection) HSet(hashKey, field, value string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Int(c.HSet(hashKey, field, value))
+	} else {
+		return rg.Int(con.c.Do("HSET", hashKey, field, value))
+	}
+}
+
+func (con *connection) HSetNX(hashKey, field, value string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Int(c.HSetNX(hashKey, field, value))
+	} else {
+		return rg.Int(con.c.Do("HSETNX", hashKey, field, value))
+	}
+}
+
+func (con *connection) HStrLen(hashKey, field string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Int(c.HStrLen(hashKey, field))
+	} else {
+		return rg.Int(con.c.Do("HSTRLEN", hashKey, field))
+	}
+}
+
+func (con *connection) HVals(hashKey string) ([]string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Strings(c.HVals(hashKey))
+	} else {
+		return rg.Strings(con.c.Do("HVALS", hashKey))
+	}
+}
+
+/*
+	Keys
+*/
 func (con *connection) Del(key string) (bool, error) {
 	if con.p != nil {
 		c, _ := con.GetConnection()
