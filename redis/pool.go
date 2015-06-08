@@ -2,7 +2,7 @@ package redis
 
 import (
 	rg "github.com/garyburd/redigo/redis"
-	"github.com/kucuny/redigocon"
+	"git.cdnetworks.com/metric/redigocon"
 	"time"
 )
 
