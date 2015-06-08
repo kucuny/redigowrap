@@ -121,6 +121,28 @@ func (con *connection) HGetAll(hashKey string) (map[string]string, error) {
 	}
 }
 
+func (con *connection) HGetAllFloat64(hashKey string) (map[string]float64, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.HGetAllFloat64(hashKey)
+	} else {
+		result, err := rg.StringMap(con.c.Do("HGETALL", hashKey))
+
+		if err != nil {
+			return map[string]float64{}, err
+		}
+
+		res := make(map[string]float64)
+
+		for key, value := range result {
+			res[key] = strToFloat64(value)
+		}
+
+		return res, nil
+	}
+}
+
 func (con *connection) HIncrBy(hashKey, field string, increment int) (int, error) {
 	if con.p != nil {
 		c, _ := con.GetConnection()
@@ -172,7 +194,35 @@ func (con *connection) HMGet(hashKey string, fields []string) ([]string, error) 
 		for idx, val := range fields {
 			req[idx+1] = val
 		}
-		return rg.Strings(con.c.Do("HMGet", req...))
+		return rg.Strings(con.c.Do("HMGET", req...))
+	}
+}
+
+func (con *connection) HMGetFloat64(hashKey string, fields []string) ([]float64, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.HMGetFloat64(hashKey, fields)
+	} else {
+		req := make([]interface{}, len(fields)+1)
+		req[0] = hashKey
+		for idx, val := range fields {
+			req[idx+1] = val
+		}
+
+		result, err := rg.Strings(con.c.Do("HMGET", req...))
+
+		if err != nil {
+			return nil, err
+		}
+
+		res := make([]float64, len(result))
+
+		for idx, value := range result {
+			res[idx] = strToFloat64(value)
+		}
+
+		return res, nil
 	}
 }
 
@@ -193,9 +243,28 @@ func (con *connection) HMSet(hashKey string, fieldValue map[string]string) (bool
 		}
 
 		res, err := rg.String(con.c.Do("HMSET", req...))
-		isSuccess := getBool(res)
+		return getBool(res), err
+	}
+}
 
-		return isSuccess, err
+func (con *connection) HMSetFloat64(hashKey string, fieldValue map[string]float64) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.HMSetFloat64(hashKey, fieldValue)
+	} else {
+		req := make([]interface{}, len(fieldValue)*2+1)
+		req[0] = hashKey
+		idx := 1
+		for name, value := range fieldValue {
+			req[idx] = name
+			idx++
+			req[idx] = value
+			idx++
+		}
+
+		res, err := rg.String(con.c.Do("HMSET", req...))
+		return getBool(res), err
 	}
 }
 
@@ -206,6 +275,16 @@ func (con *connection) HSet(hashKey, field, value string) (int, error) {
 		c, _ := con.GetConnection()
 		defer c.Release()
 		return c.HSet(hashKey, field, value)
+	} else {
+		return rg.Int(con.c.Do("HSET", hashKey, field, value))
+	}
+}
+
+func (con *connection) HSetFloat64(hashKey, field string, value float64) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.HSetFloat64(hashKey, field, value)
 	} else {
 		return rg.Int(con.c.Do("HSET", hashKey, field, value))
 	}
@@ -317,9 +396,7 @@ func (con *connection) Move(key, db string) (bool, error) {
 		return c.Move(key, db)
 	} else {
 		res, err := rg.String(con.c.Do("MOVE", key, db))
-		isSuccess := getBool(res)
-
-		return isSuccess, err
+		return getBool(res), err
 	}
 }
 
@@ -382,9 +459,7 @@ func (con *connection) Rename(key, newKey string) (bool, error) {
 		return c.Rename(key, newKey)
 	} else {
 		res, err := rg.String(con.c.Do("Rename", key, newKey))
-		isSuccess := getBool(res)
-
-		return isSuccess, err
+		return getBool(res), err
 	}
 }
 
@@ -395,9 +470,7 @@ func (con *connection) RenameNX(key, newKey string) (bool, error) {
 		return c.RenameNX(key, newKey)
 	} else {
 		res, err := rg.String(con.c.Do("RenameNX", key, newKey))
-		isSuccess := getBool(res)
-
-		return isSuccess, err
+		return getBool(res), err
 	}
 }
 
@@ -408,9 +481,7 @@ func (con *connection) Restore(key string, ttl int, serializedValue string) (boo
 		return c.Restore(key, ttl, serializedValue)
 	} else {
 		res, err := rg.String(con.c.Do("RESTORE", key, ttl, serializedValue))
-		isSuccess := getBool(res)
-
-		return isSuccess, err
+		return getBool(res), err
 	}
 }
 
@@ -421,9 +492,7 @@ func (con *connection) RestoreWithReplace(key string, ttl int, serializedValue, 
 		return c.RestoreWithReplace(key, ttl, serializedValue, replace)
 	} else {
 		res, err := rg.String(con.c.Do("RESTORE", key, ttl, serializedValue, replace))
-		isSuccess := getBool(res)
-
-		return isSuccess, err
+		return getBool(res), err
 	}
 }
 
@@ -646,6 +715,33 @@ func (con *connection) MGet(keys []string) ([]string, error) {
 	}
 }
 
+func (con *connection) MGetFloat64(keys []string) ([]float64, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.MGetFloat64(keys)
+	} else {
+		req := make([]interface{}, len(keys))
+		for idx, val := range keys {
+			req[idx] = val
+		}
+
+		result, err := rg.Strings(con.c.Do("MGET", req...))
+
+		if err != nil {
+			return nil, err
+		}
+
+		res := make([]float64, len(result))
+
+		for idx, value := range result {
+			res[idx] = strToFloat64(value)
+		}
+
+		return res, nil
+	}
+}
+
 func (con *connection) MSet(keyValue map[string]string) (bool, error) {
 	if con.p != nil {
 		c, _ := con.GetConnection()
@@ -662,9 +758,27 @@ func (con *connection) MSet(keyValue map[string]string) (bool, error) {
 		}
 
 		res, err := rg.String(con.c.Do("MSET", req...))
-		isSuccess := getBool(res)
+		return getBool(res), err
+	}
+}
 
-		return isSuccess, err
+func (con *connection) MSetFloat64(keyValue map[string]float64) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.MSetFloat64(keyValue)
+	} else {
+		req := make([]interface{}, len(keyValue)*2)
+		idx := 0
+		for name, value := range keyValue {
+			req[idx] = name
+			idx++
+			req[idx] = value
+			idx++
+		}
+
+		res, err := rg.String(con.c.Do("MSET", req...))
+		return getBool(res), err
 	}
 }
 
@@ -694,9 +808,7 @@ func (con *connection) PSetEX(key, value string, millisec int64) (bool, error) {
 		return c.PSetEX(key, value, millisec)
 	} else {
 		res, err := rg.String(con.c.Do("PSETEX", key, millisec, value))
-		isSuccess := getBool(res)
-
-		return isSuccess, err
+		return getBool(res), err
 	}
 }
 
@@ -707,9 +819,7 @@ func (con *connection) Set(key, value string) (bool, error) {
 		return c.Set(key, value)
 	} else {
 		res, err := rg.String(con.c.Do("SET", key, value))
-		isSuccess := getBool(res)
-
-		return isSuccess, err
+		return getBool(res), err
 	}
 }
 
@@ -720,9 +830,7 @@ func (con *connection) SetFloat64(key string, value float64) (bool, error) {
 		return c.SetFloat64(key, value)
 	} else {
 		res, err := rg.String(con.c.Do("SET", key, value))
-		isSuccess := getBool(res)
-
-		return isSuccess, err
+		return getBool(res), err
 	}
 }
 
@@ -743,9 +851,7 @@ func (con *connection) SetEX(key, value string, seconds int) (bool, error) {
 		return c.SetEX(key, value, seconds)
 	} else {
 		res, err := rg.String(con.c.Do("SETEX", key, seconds, value))
-		isSuccess := getBool(res)
-
-		return isSuccess, err
+		return getBool(res), err
 	}
 }
 
