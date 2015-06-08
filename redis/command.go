@@ -166,7 +166,6 @@ func (con *connection) HMGet(hashKey string, fields []string) ([]string, error) 
 	}
 }
 
-// TODO: Modify
 func (con *connection) HMSet(hashKey string, fieldValue map[string]string) (bool, error) {
 	if con.p != nil {
 		c, _ := con.GetConnection()
@@ -235,13 +234,27 @@ func (con *connection) HVals(hashKey string) ([]string, error) {
 /*
 	Keys
 */
-func (con *connection) Del(key string) (bool, error) {
+func (con *connection) Del(keys []string) (int, error) {
 	if con.p != nil {
 		c, _ := con.GetConnection()
 		defer c.Release()
-		return rg.Bool(c.Del(key))
+		return rg.Int(c.Del(keys))
 	} else {
-		return rg.Bool(con.c.Do("DEL", key))
+		req := make([]interface{}, len(keys))
+		for idx, val := range keys {
+			req[idx] = val
+		}
+		return rg.Int(con.c.Do("DEL", req...))
+	}
+}
+
+func (con *connection) Dump(key string) (string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.String(c.Exists(key))
+	} else {
+		return rg.String(con.c.Do("DUMP", key))
 	}
 }
 
@@ -252,6 +265,217 @@ func (con *connection) Exists(key string) (bool, error) {
 		return rg.Bool(c.Exists(key))
 	} else {
 		return rg.Bool(con.c.Do("EXISTS", key))
+	}
+}
+
+func (con *connection) Expire(key string, seconds int) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Bool(c.Expire(key, seconds))
+	} else {
+		return rg.Bool(con.c.Do("EXPIRE", key, seconds))
+	}
+}
+
+func (con *connection) Expireat(key string, timestamp int64) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Bool(c.Expireat(key, timestamp))
+	} else {
+		return rg.Bool(con.c.Do("EXPIREAT", key, timestamp))
+	}
+}
+
+func (con *connection) Keys(pattern string) ([]string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Strings(c.Keys(pattern))
+	} else {
+		return rg.Strings(con.c.Do("KEYS", pattern))
+	}
+}
+
+// Migrate()
+
+func (con *connection) Move(key, db string) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+
+		res, err := rg.String(c.Move(key, db))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	} else {
+		res, err := rg.String(con.c.Do("MOVE", key, db))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	}
+}
+
+// Object()
+
+func (con *connection) Persist(key string) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Bool(c.Persist(key))
+	} else {
+		return rg.Bool(con.c.Do("PERSIST", key))
+	}
+}
+
+func (con *connection) PExpire(key string, millisec int64) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Bool(c.PExpire(key, millisec))
+	} else {
+		return rg.Bool(con.c.Do("PEXPIRE", key, millisec))
+	}
+}
+
+func (con *connection) PExpireat(key string, millisecTimestamp int64) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Bool(c.PExpireat(key, millisecTimestamp))
+	} else {
+		return rg.Bool(con.c.Do("PEXPIREAT", key, millisecTimestamp))
+	}
+}
+
+func (con *connection) PTTL(key string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Int(c.PTTL(key))
+	} else {
+		return rg.Int(con.c.Do("PTTL", key))
+	}
+}
+
+func (con *connection) RandomKey() (string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.String(c.RandomKey())
+	} else {
+		return rg.String(con.c.Do("RANDOMKEY"))
+	}
+}
+
+func (con *connection) Rename(key, newKey string) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+
+		res, err := rg.String(c.Rename(key, newKey))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	} else {
+		res, err := rg.String(con.c.Do("Rename", key, newKey))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	}
+}
+
+func (con *connection) RenameNX(key, newKey string) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+
+		res, err := rg.String(c.RenameNX(key, newKey))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	} else {
+		res, err := rg.String(con.c.Do("RenameNX", key, newKey))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	}
+}
+
+func (con *connection) Restore(key string, ttl int, serializedValue string) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+
+		res, err := rg.String(c.Restore(key, ttl, serializedValue))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	} else {
+		res, err := rg.String(con.c.Do("RESTORE", key, ttl, serializedValue))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	}
+}
+
+func (con *connection) RestoreWithReplace(key string, ttl int, serializedValue, replace string) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+
+		res, err := rg.String(c.RestoreWithReplace(key, ttl, serializedValue, replace))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	} else {
+		res, err := rg.String(con.c.Do("RESTORE", key, ttl, serializedValue, replace))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	}
+}
+
+// Scan()
+
+func (con *connection) Sort(args ...interface{}) ([]string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Strings(c.Sort(args...))
+	} else {
+		return rg.Strings(con.c.Do("SORT", args...))
+	}
+}
+
+func (con *connection) TTL(key string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Int(c.TTL(key))
+	} else {
+		return rg.Int(con.c.Do("TTL", key))
+	}
+}
+
+func (con *connection) Type(key string) (string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.String(c.Type(key))
+	} else {
+		return rg.String(con.c.Do("TYPE", key))
+	}
+}
+
+func (con *connection) Wait(numSlaves, ttl int) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return rg.Int(c.Wait(numSlaves, ttl))
+	} else {
+		return rg.Int(con.c.Do("Wait", numSlaves, ttl))
 	}
 }
 
