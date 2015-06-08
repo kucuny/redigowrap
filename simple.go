@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/kucuny/redigowrap/redis"
+	"git.cdnetworks.com/metric/redigowrap/redis"
 )
 
 var redisServerAddr string = "redis://:redis_user@localhost:6379/0"
