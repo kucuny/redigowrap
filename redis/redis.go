@@ -100,6 +100,7 @@ type (
 		MSetNX(keyValue map[string]string) (int, error)
 		PSetEX(key, value string, millisec int64) (bool, error)
 		Set(key, value string) (bool, error)
+		SetFloat64(key string, value float64) (bool, error)
 		SetBit(key, value string, offset int) (int, error)
 		SetEX(key, value string, seconds int) (bool, error)
 		SetNX(key, value string) (int, error)

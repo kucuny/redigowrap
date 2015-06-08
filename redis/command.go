@@ -725,6 +725,23 @@ func (con *connection) Set(key, value string) (bool, error) {
 	}
 }
 
+func (con *connection) SetFloat64(key string, value float64) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+
+		res, err := rg.String(c.SetFloat64(key, value))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	} else {
+		res, err := rg.String(con.c.Do("SET", key, value))
+		isSuccess := getBool(res)
+
+		return isSuccess, err
+	}
+}
+
 func (con *connection) SetBit(key, value string, offset int) (int, error) {
 	if con.p != nil {
 		c, _ := con.GetConnection()
