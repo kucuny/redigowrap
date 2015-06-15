@@ -2,7 +2,7 @@ package redis
 
 import (
 	"fmt"
-	"git.cdnetworks.com/metric/redigocon"
+	"github.com/kucuny/redigocon"
 )
 
 type Connection interface {
