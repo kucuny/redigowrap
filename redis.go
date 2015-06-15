@@ -118,6 +118,10 @@ type (
 		// Transactions
 	}
 
+	ConnectionCommands interface {
+		Close() bool
+	}
+
 	PoolCommands interface {
 		GetConnection() (PoolConnection, error)
 		ActiveCount() int
