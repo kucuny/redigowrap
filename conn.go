@@ -7,6 +7,7 @@ import (
 
 type Connection interface {
 	RedisCommands
+	ConnectionCommands
 }
 
 func CreateConnection(serverAddr, auth, db string) (Connection, error) {
@@ -35,4 +36,14 @@ func CreateConnectionUri(uri string) (Connection, error) {
 	con := &connection{c: c}
 
 	return con, nil
+}
+
+func (con *connection) Close() bool {
+	err := con.c.Close()
+
+	if err != nil {
+		return false
+	}
+
+	return true
 }
