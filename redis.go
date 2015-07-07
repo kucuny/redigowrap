@@ -79,10 +79,36 @@ type (
 		// Scripting
 
 		// Server
+		FlushAll() (bool, error)
+		FlushDB() (bool, error)
 
 		// Sets
 
 		// Sorted Sets
+		ZAdd(key string, keyValue map[float64]string) (int, error)
+		ZCard(key string) (int, error)
+		ZCount(key, min, max string) (int, error)
+		ZIncrBy(key string, increment float64, member string) (float64, error)
+		// ZInterStore()
+		ZLexCount(key, min, max string) (int, error)
+		ZRange(key string, start, stop int) ([]string, error)
+		ZRangeWithScores(key string, start, stop int) (map[float64]string, error)
+		// ZRangeByLex()
+		ZRangeByScore(key, min, max string) ([]string, error)
+		ZRangeByScoreWithScores(key, min, max string) (map[float64]string, error)
+		ZRank(key, member string) (int, error)
+		ZRem(key string, members []string) (int, error)
+		// ZRemRangeByLex()
+		ZRemRangeByRank(key string, start, stop int) (int, error)
+		ZRemRangeByScore(key, min, max string) (int, error)
+		ZRevRange(key string, start, stop int) ([]string, error)
+		// ZRevRangeByLex()
+		ZRevRangeByScore(key, min, max string) ([]string, error)
+		ZRevRangeByScoreWithScores(key, min, max string) (map[float64]string, error)
+		ZRevRank(key, member string) (int, error)
+		// ZScan()
+		ZScore(key, member string) (int, error)
+		// ZUnionStore()
 
 		// Strings
 		Append(key, value string) (int, error)
