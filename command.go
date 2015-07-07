@@ -1,7 +1,9 @@
 package redis
 
 import (
+	"errors"
 	rg "github.com/garyburd/redigo/redis"
+	"strconv"
 )
 
 func (con *connection) Do(command string, args ...interface{}) (interface{}, error) {
@@ -539,7 +541,291 @@ func (con *connection) Wait(numSlaves, ttl int) (int, error) {
 }
 
 /*
-   Strings
+	Server
+*/
+func (con *connection) FlushAll() (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.FlushAll()
+	} else {
+		res, err := rg.String(con.Do("FLUSHALL"))
+		return getBool(res), err
+	}
+}
+
+func (con *connection) FlushDB() (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.FlushDB()
+	} else {
+		res, err := rg.String(con.Do("FLUSHALL"))
+		return getBool(res), err
+	}
+}
+
+/*
+	Sorted Sets
+*/
+func (con *connection) ZAdd(key string, keyValue map[float64]string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZAdd(key, keyValue)
+	} else {
+		req := make([]interface{}, len(keyValue)*2+1)
+		req[0] = key
+		idx := 1
+		for name, value := range keyValue {
+			req[idx] = name
+			idx++
+			req[idx] = value
+			idx++
+		}
+
+		res, err := rg.Int(con.c.Do("ZADD", req...))
+		return res, err
+	}
+}
+
+func (con *connection) ZCard(key string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZCard(key)
+	} else {
+		return rg.Int(con.c.Do("ZCARD", key))
+	}
+}
+
+func (con *connection) ZCount(key, min, max string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZCount(key, min, max)
+	} else {
+		return rg.Int(con.c.Do("ZCOUNT", key, min, max))
+	}
+}
+
+func (con *connection) ZIncrBy(key string, increment float64, member string) (float64, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZIncrBy(key, increment, member)
+	} else {
+		return rg.Float64(con.c.Do("ZINCRYBY", key, increment, member))
+	}
+}
+
+// ZInterStore()
+
+func (con *connection) ZLexCount(key, min, max string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZLexCount(key, min, max)
+	} else {
+		return rg.Int(con.c.Do("ZLEXCOUNT", key, min, max))
+	}
+}
+
+func (con *connection) ZRange(key string, start, stop int) ([]string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZRange(key, start, stop)
+	} else {
+		return rg.Strings(con.c.Do("ZRANGE", key, start, stop))
+	}
+}
+
+func (con *connection) ZRangeWithScores(key string, start, stop int) (map[float64]string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZRangeWithScores(key, start, stop)
+	} else {
+		result := make(map[float64]string)
+		res, err := rg.StringMap(con.c.Do("ZRANGE", key, start, stop, "WITHSCORES"))
+
+		if err != nil {
+			return nil, err
+		}
+
+		for key, value := range res {
+			val, err := strconv.ParseFloat(value, 64)
+
+			if err != nil {
+				return nil, errors.New("redigowrap: Cannot convert string to float64")
+			}
+
+			result[val] = key
+		}
+
+		return result, nil
+	}
+}
+
+// ZRangeByLex()
+func (con *connection) ZRangeByScore(key, min, max string) ([]string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZRangeByScore(key, min, max)
+	} else {
+		return rg.Strings(con.Do("ZRANGEBYSCORE", key, min, max))
+	}
+}
+
+func (con *connection) ZRangeByScoreWithScores(key, min, max string) (map[float64]string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZRangeByScoreWithScores(key, min, max)
+	} else {
+		result := make(map[float64]string)
+		res, err := rg.StringMap(con.c.Do("ZRANGEBYSCORE", key, min, max, "WITHSCORES"))
+
+		if err != nil {
+			return nil, err
+		}
+
+		for key, value := range res {
+			val, err := strconv.ParseFloat(value, 64)
+
+			if err != nil {
+				return nil, errors.New("redigowrap: Cannot convert string to float64")
+			}
+
+			result[val] = key
+		}
+
+		return result, nil
+	}
+}
+
+func (con *connection) ZRank(key, member string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZRank(key, member)
+	} else {
+		return rg.Int(con.Do("ZRANK", key, member))
+	}
+}
+
+func (con *connection) ZRem(key string, members []string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZRem(key, members)
+	} else {
+		req := make([]interface{}, len(members)+1)
+		req[0] = key
+		for idx, value := range members {
+			req[idx+1] = value
+		}
+
+		return rg.Int(con.Do("ZREM", req...))
+	}
+}
+
+// ZRemRangeByLex()
+func (con *connection) ZRemRangeByRank(key string, start, stop int) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZRemRangeByRank(key, start, stop)
+	} else {
+		return rg.Int(con.Do("ZREMRANGEBYRANK", key, start, stop))
+	}
+}
+
+func (con *connection) ZRemRangeByScore(key, min, max string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZRemRangeByScore(key, min, max)
+	} else {
+		return rg.Int(con.Do("ZREMRANGEBYSCORE", key, min, max))
+	}
+}
+
+func (con *connection) ZRevRange(key string, start, stop int) ([]string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZRevRange(key, start, stop)
+	} else {
+		return rg.Strings(con.c.Do("ZREVRANGE", key, start, stop))
+	}
+}
+
+// ZRevRangeByLex()
+func (con *connection) ZRevRangeByScore(key, min, max string) ([]string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZRevRangeByScore(key, min, max)
+	} else {
+		return rg.Strings(con.Do("ZREVRANGEBYSCORE", key, min, max))
+	}
+}
+
+func (con *connection) ZRevRangeByScoreWithScores(key, min, max string) (map[float64]string, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZRevRangeByScoreWithScores(key, min, max)
+	} else {
+		result := make(map[float64]string)
+		res, err := rg.StringMap(con.c.Do("ZREVRANGEBYSCORE", key, min, max, "WITHSCORES"))
+
+		if err != nil {
+			return nil, err
+		}
+
+		for key, value := range res {
+			val, err := strconv.ParseFloat(value, 64)
+
+			if err != nil {
+				return nil, errors.New("redigowrap: Cannot convert string to float64")
+			}
+
+			result[val] = key
+		}
+
+		return result, nil
+	}
+}
+
+func (con *connection) ZRevRank(key, member string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZRevRank(key, member)
+	} else {
+		return rg.Int(con.Do("ZREVRANK", key, member))
+	}
+}
+
+// ZScan()
+func (con *connection) ZScore(key, member string) (int, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.ZScore(key, member)
+	} else {
+		return rg.Int(con.Do("ZSCORE", key, member))
+	}
+}
+
+// ZUnionStore()
+
+/*
+	Strings
 */
 func (con *connection) Append(key, value string) (int, error) {
 	if con.p != nil {
