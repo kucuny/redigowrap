@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	REDIS_SERVER_ADDR string = "redis://:alert_user@10.40.210.153:6379/1"
+	REDIS_SERVER_ADDR string = "redis://:passwd@localhost:6379/1"
 )
 
 func main() {
