@@ -16,6 +16,36 @@ func (con *connection) Do(command string, args ...interface{}) (interface{}, err
 	}
 }
 
+func (con *connection) Send(command string, args ...interface{}) error {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.Send(command, args...)
+	} else {
+		return con.c.Send(command, args...)
+	}
+}
+
+func (con *connection) Flush() error {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.Flush()
+	} else {
+		return con.c.Flush()
+	}
+}
+
+func (con *connection) Receive() (interface{}, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.Receive()
+	} else {
+		return con.c.Receive()
+	}
+}
+
 /*
 	Connection
 */
@@ -50,13 +80,14 @@ func (con *connection) Ping() (string, error) {
 	}
 }
 
-func (con *connection) Select(index int) (string, error) {
+func (con *connection) Select(index int) (bool, error) {
 	if con.p != nil {
 		c, _ := con.GetConnection()
 		defer c.Release()
 		return c.Select(index)
 	} else {
-		return rg.String(con.c.Do("SELECT", index))
+		res, err := con.c.Do("SELECT", index)
+		return rg.Bool(res, err)
 	}
 }
 
@@ -562,6 +593,28 @@ func (con *connection) FlushDB() (bool, error) {
 	} else {
 		res, err := rg.String(con.Do("FLUSHALL"))
 		return getBool(res), err
+	}
+}
+
+func (con *connection) Time() (map[string]int64, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.Time()
+	} else {
+		res, err := rg.Strings(con.Do("TIME"))
+
+		if err != nil {
+			return nil, err
+		}
+
+		result := make(map[string]int64)
+		secs, _ := strconv.ParseInt(res[0], 10, 64)
+		result["seconds"] = secs
+		microSecs, _ := strconv.ParseInt(res[1], 10, 64)
+		result["microseconds"] = microSecs
+
+		return result, err
 	}
 }
 
@@ -1168,5 +1221,63 @@ func (con *connection) StrLen(key string) (int, error) {
 		return c.StrLen(key)
 	} else {
 		return rg.Int(con.c.Do("STRLEN", key))
+	}
+}
+
+/*
+   Transactions
+*/
+func (con *connection) Discard() (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.Discard()
+	} else {
+		return rg.Bool(con.c.Do("DISCARD"))
+	}
+}
+
+func (con *connection) Exec() ([]interface{}, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.Exec()
+	} else {
+		return rg.Values(con.c.Do("EXEC"))
+	}
+}
+
+func (con *connection) Multi() (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.Multi()
+	} else {
+		return rg.Bool(con.c.Do("MULTI"))
+	}
+}
+
+func (con *connection) Unwatch() (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.Unwatch()
+	} else {
+		return rg.Bool(con.c.Do("UNWATCH"))
+	}
+}
+
+func (con *connection) Watch(keys []string) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.Watch(keys)
+	} else {
+		req := make([]interface{}, len(keys))
+		for idx, val := range keys {
+			req[idx] = val
+		}
+		res, err := rg.String(con.c.Do("WATCH", req...))
+		return getBool(res), err
 	}
 }

@@ -13,6 +13,9 @@ type (
 	RedisCommands interface {
 		// Redigo Function
 		Do(cmd string, args ...interface{}) (interface{}, error)
+		Send(cmd string, args ...interface{}) error
+		Flush() error
+		Receive() (interface{}, error)
 
 		// Cluster
 
@@ -20,7 +23,7 @@ type (
 		Auth(password string) (bool, error)
 		Echo(message string) (string, error)
 		Ping() (string, error)
-		Select(index int) (string, error)
+		Select(index int) (bool, error)
 		Quit() (string, error)
 
 		// Hashes
@@ -81,6 +84,7 @@ type (
 		// Server
 		FlushAll() (bool, error)
 		FlushDB() (bool, error)
+		Time() (map[string]int64, error)
 
 		// Sets
 
@@ -142,6 +146,11 @@ type (
 		StrLen(key string) (int, error)
 
 		// Transactions
+		Discard() (bool, error)
+		Exec() ([]interface{}, error)
+		Multi() (bool, error)
+		Unwatch() (bool, error)
+		Watch(keys []string) (bool, error)
 	}
 
 	ConnectionCommands interface {

@@ -101,4 +101,9 @@ func (suite *RedisCommandTestSuite) TestSortedSetCommands() {
 	assert.NoError(err)
 	assert.NotEmpty(getResult[2])
 	assert.Empty(getResult[3])
+
+	watchResult, err := suite.con.Watch([]string{"keys"})
+
+	assert.NoError(err)
+	assert.NotEmpty(watchResult)
 }
