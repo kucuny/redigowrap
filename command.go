@@ -154,6 +154,28 @@ func (con *connection) HGetAll(hashKey string) (map[string]string, error) {
 	}
 }
 
+func (con *connection) HGetAllInterface(hashKey string) (map[string]interface{}, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.HGetAllInterface(hashKey)
+	} else {
+		result, err := rg.Values(con.c.Do("HGETALL", hashKey))
+
+		if err != nil {
+			return nil, err
+		}
+
+		res := make(map[string]interface{})
+
+		for key, value := range result {
+			res[string(key)] = value
+		}
+
+		return res, nil
+	}
+}
+
 func (con *connection) HGetAllFloat64(hashKey string) (map[string]float64, error) {
 	if con.p != nil {
 		c, _ := con.GetConnection()
@@ -264,6 +286,27 @@ func (con *connection) HMSet(hashKey string, fieldValue map[string]string) (bool
 		c, _ := con.GetConnection()
 		defer c.Release()
 		return c.HMSet(hashKey, fieldValue)
+	} else {
+		req := make([]interface{}, len(fieldValue)*2+1)
+		req[0] = hashKey
+		idx := 1
+		for name, value := range fieldValue {
+			req[idx] = name
+			idx++
+			req[idx] = value
+			idx++
+		}
+
+		res, err := rg.String(con.c.Do("HMSET", req...))
+		return getBool(res), err
+	}
+}
+
+func (con *connection) HMSetInterface(hashKey string, fieldValue map[string]interface{}) (bool, error) {
+	if con.p != nil {
+		c, _ := con.GetConnection()
+		defer c.Release()
+		return c.HMSetInterface(hashKey, fieldValue)
 	} else {
 		req := make([]interface{}, len(fieldValue)*2+1)
 		req[0] = hashKey
@@ -591,7 +634,7 @@ func (con *connection) FlushDB() (bool, error) {
 		defer c.Release()
 		return c.FlushDB()
 	} else {
-		res, err := rg.String(con.Do("FLUSHALL"))
+		res, err := rg.String(con.Do("FLUSHDB"))
 		return getBool(res), err
 	}
 }
