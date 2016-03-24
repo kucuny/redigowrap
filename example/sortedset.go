@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"git.cdnetworks.com/metric/redigowrap"
+	"github.com/kucuny/redigowrap"
 )
 
 const (
