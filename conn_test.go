@@ -20,10 +20,6 @@ func (suite *RedigoWrapConnectionTest) TestRedisConnection() {
 	suite.NotNil(redis)
 }
 
-func (suite *RedigoWrapConnectionTest) TestRedisPoolConnection() {
-
-}
-
 func TestRedigoWrapConnectionTestSuite(t *testing.T) {
 	suite.Run(t, new(RedigoWrapConnectionTest))
 }

@@ -159,10 +159,10 @@ type (
 		Close() bool
 	}
 
-	PoolCommands interface {
-		GetConnection() (PoolConnection, error)
-		ActiveCount() int
-		Release()
-		PoolClose()
-	}
+	//PoolCommands interface {
+	//	GetConnection() (PoolConnection, error)
+	//	ActiveCount() int
+	//	Release()
+	//	PoolClose()
+	//}
 )
